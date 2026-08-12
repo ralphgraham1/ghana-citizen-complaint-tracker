@@ -34,7 +34,10 @@ create policy "profiles_insert_self" on profiles for insert with check (id = aut
 create policy "profiles_update_own" on profiles for update using (id = auth.uid()) with check (id = auth.uid());
 create policy "profiles_admin_all" on profiles for all using (current_user_role() = 'super_admin') with check (current_user_role() = 'super_admin');
 
--- Prevent a citizen from self-promoting to staff/admin via the update-own-profile policy.
+-- Prevent a citizen from self-promoting to staff/admin, whether via the
+-- insert-own-profile policy (self-registration) or the update-own-profile
+-- policy. On INSERT there is no `old` row to fall back to, so a non-super-admin
+-- caller is forced to 'citizen' / no department instead.
 create or replace function public.prevent_role_escalation()
 returns trigger
 language plpgsql
@@ -42,16 +45,23 @@ security definer
 set search_path = public
 as $$
 begin
-  if public.current_user_role() is distinct from 'super_admin' then
-    new.role := old.role;
-    new.department_id := old.department_id;
+  if tg_op = 'INSERT' then
+    if public.current_user_role() is distinct from 'super_admin' then
+      new.role := 'citizen';
+      new.department_id := null;
+    end if;
+  elsif tg_op = 'UPDATE' then
+    if public.current_user_role() is distinct from 'super_admin' then
+      new.role := old.role;
+      new.department_id := old.department_id;
+    end if;
   end if;
   return new;
 end;
 $$;
 
 create trigger trg_prevent_role_escalation
-  before update on profiles
+  before insert or update on profiles
   for each row execute function public.prevent_role_escalation();
 
 -- departments
@@ -138,7 +148,7 @@ begin
     raise exception 'Complaint not found';
   end if;
 
-  if current_user_role() = 'department_staff' and v_complaint.department_id is distinct from current_user_department_id() then
+  if current_user_role() = 'department_staff' and (current_user_department_id() is null or v_complaint.department_id is distinct from current_user_department_id()) then
     raise exception 'Not authorized to update this complaint';
   elsif current_user_role() not in ('department_staff', 'super_admin') then
     raise exception 'Not authorized to update complaint status';
@@ -208,6 +218,11 @@ end;
 $$;
 
 grant execute on function public.assign_complaint(uuid, uuid, uuid, text) to authenticated;
+
+-- Explicit deny-by-default backstop: revoke Supabase's default broad
+-- ALTER-DEFAULT-PRIVILEGES grants before re-granting only what's needed below,
+-- so RLS isn't the sole line of defense if a future migration adds a policy.
+revoke all on profiles, departments, complaints, complaint_status_history, complaint_comments from anon, authenticated;
 
 -- Table-level grants (RLS policies above further restrict which rows/roles apply)
 grant select, insert on profiles to authenticated;
