@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
+import { SubmitComplaintPage } from '@/pages/SubmitComplaintPage'
 
 function ComingSoon({ label }: { label: string }) {
   return <div className="p-8 text-muted-foreground">{label} — coming soon.</div>
@@ -18,7 +19,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
 
         <Route element={<ProtectedRoute allowedRoles={['citizen']} />}>
-          <Route path="/submit" element={<ComingSoon label="Submit complaint" />} />
+          <Route path="/submit" element={<SubmitComplaintPage />} />
           <Route path="/my-reports" element={<ComingSoon label="My reports" />} />
         </Route>
 
