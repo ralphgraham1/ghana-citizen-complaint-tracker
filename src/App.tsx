@@ -8,6 +8,8 @@ import { MyReportsPage } from '@/pages/MyReportsPage'
 import { CitizenComplaintDetailPage } from '@/pages/CitizenComplaintDetailPage'
 import { PublicDashboardPage } from '@/pages/PublicDashboardPage'
 import { PublicComplaintDetailPage } from '@/pages/PublicComplaintDetailPage'
+import { StaffQueuePage } from '@/pages/staff/StaffQueuePage'
+import { StaffComplaintDetailPage } from '@/pages/staff/StaffComplaintDetailPage'
 
 function ComingSoon({ label }: { label: string }) {
   return <div className="p-8 text-muted-foreground">{label} — coming soon.</div>
@@ -30,7 +32,8 @@ function App() {
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['department_staff']} />}>
-          <Route path="/staff" element={<ComingSoon label="Staff queue" />} />
+          <Route path="/staff" element={<StaffQueuePage />} />
+          <Route path="/staff/:id" element={<StaffComplaintDetailPage />} />
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
