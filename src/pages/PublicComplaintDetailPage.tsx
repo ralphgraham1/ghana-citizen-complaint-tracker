@@ -21,11 +21,16 @@ export function PublicComplaintDetailPage() {
     Promise.all([
       supabase.from('complaints_public').select('*').eq('id', id).single(),
       supabase.from('complaint_status_history').select('new_status, created_at').eq('complaint_id', id).order('created_at'),
-    ]).then(([complaintRes, historyRes]) => {
-      setComplaint((complaintRes.data as PublicComplaint) ?? null)
-      setHistory((historyRes.data as PublicHistoryEntry[]) ?? [])
-      setLoading(false)
-    })
+    ])
+      .then(([complaintRes, historyRes]) => {
+        setComplaint((complaintRes.data as PublicComplaint) ?? null)
+        setHistory((historyRes.data as PublicHistoryEntry[]) ?? [])
+        setLoading(false)
+      })
+      .catch(() => {
+        setComplaint(null)
+        setLoading(false)
+      })
   }, [id])
 
   if (loading) return <p className="p-6 text-muted-foreground">Loading…</p>
