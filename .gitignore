@@ -1,4 +1,5 @@
 .superpowers/
+supabase/.temp/
 
 node_modules
 dist
