@@ -6,6 +6,8 @@ import { RegisterPage } from '@/pages/RegisterPage'
 import { SubmitComplaintPage } from '@/pages/SubmitComplaintPage'
 import { MyReportsPage } from '@/pages/MyReportsPage'
 import { CitizenComplaintDetailPage } from '@/pages/CitizenComplaintDetailPage'
+import { PublicDashboardPage } from '@/pages/PublicDashboardPage'
+import { PublicComplaintDetailPage } from '@/pages/PublicComplaintDetailPage'
 
 function ComingSoon({ label }: { label: string }) {
   return <div className="p-8 text-muted-foreground">{label} — coming soon.</div>
@@ -16,7 +18,8 @@ function App() {
     <div className="min-h-screen">
       <Navbar />
       <Routes>
-        <Route path="/" element={<ComingSoon label="Public dashboard" />} />
+        <Route path="/" element={<PublicDashboardPage />} />
+        <Route path="/complaints/:id" element={<PublicComplaintDetailPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
 
