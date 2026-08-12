@@ -37,7 +37,11 @@ create policy "profiles_admin_all" on profiles for all using (current_user_role(
 -- Prevent a citizen from self-promoting to staff/admin, whether via the
 -- insert-own-profile policy (self-registration) or the update-own-profile
 -- policy. On INSERT there is no `old` row to fall back to, so a non-super-admin
--- caller is forced to 'citizen' / no department instead.
+-- caller is forced to 'citizen' / no department instead. service_role (the
+-- already-fully-trusted admin/seed context, which bypasses RLS by design) is
+-- exempted up front so admin seeding/provisioning scripts can still set
+-- non-citizen roles directly -- this trigger only needs to constrain
+-- ordinary authenticated end users.
 create or replace function public.prevent_role_escalation()
 returns trigger
 language plpgsql
@@ -45,16 +49,21 @@ security definer
 set search_path = public
 as $$
 begin
+  if coalesce(current_setting('request.jwt.claims', true)::json ->> 'role', '') = 'service_role' then
+    return new;
+  end if;
+
   if tg_op = 'INSERT' then
     if public.current_user_role() is distinct from 'super_admin' then
       new.role := 'citizen';
       new.department_id := null;
     end if;
-  elsif tg_op = 'UPDATE' then
-    if public.current_user_role() is distinct from 'super_admin' then
-      new.role := old.role;
-      new.department_id := old.department_id;
-    end if;
+    return new;
+  end if;
+
+  if public.current_user_role() is distinct from 'super_admin' then
+    new.role := old.role;
+    new.department_id := old.department_id;
   end if;
   return new;
 end;
