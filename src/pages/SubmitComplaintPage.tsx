@@ -69,40 +69,44 @@ export function SubmitComplaintPage() {
       return
     }
 
-    let photoUrl: string | null = null
-    if (photoFile) {
-      const path = `${user.id}/${crypto.randomUUID()}-${photoFile.name}`
-      const { error: uploadError } = await supabase.storage.from('complaint-photos').upload(path, photoFile)
-      if (uploadError) {
-        setSubmitting(false)
-        setError(`Photo upload failed: ${uploadError.message}`)
+    try {
+      let photoUrl: string | null = null
+      if (photoFile) {
+        const path = `${user.id}/${crypto.randomUUID()}-${photoFile.name}`
+        const { error: uploadError } = await supabase.storage.from('complaint-photos').upload(path, photoFile)
+        if (uploadError) {
+          setError(`Photo upload failed: ${uploadError.message}`)
+          return
+        }
+        photoUrl = supabase.storage.from('complaint-photos').getPublicUrl(path).data.publicUrl
+      }
+
+      const departmentId = suggestDepartmentId(category, departments)
+
+      const { error: insertError } = await supabase.from('complaints').insert({
+        citizen_id: user.id,
+        category,
+        title,
+        description,
+        photo_url: photoUrl,
+        latitude: location.lat,
+        longitude: location.lng,
+        address_text: addressText || null,
+        department_id: departmentId,
+        ai_suggested_category: aiSuggestion?.category ?? null,
+        ai_confidence: aiSuggestion?.confidence ?? null,
+      })
+
+      if (insertError) {
+        setError(insertError.message)
         return
       }
-      photoUrl = supabase.storage.from('complaint-photos').getPublicUrl(path).data.publicUrl
+      navigate('/my-reports')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong while submitting your report. Please try again.')
+    } finally {
+      setSubmitting(false)
     }
-
-    const departmentId = suggestDepartmentId(category, departments)
-
-    const { error: insertError } = await supabase.from('complaints').insert({
-      citizen_id: user.id,
-      category,
-      title,
-      description,
-      photo_url: photoUrl,
-      latitude: location.lat,
-      longitude: location.lng,
-      address_text: addressText || null,
-      department_id: departmentId,
-      ai_suggested_category: aiSuggestion?.category ?? null,
-      ai_confidence: aiSuggestion?.confidence ?? null,
-    })
-
-    setSubmitting(false)
-    if (insertError) {
-      setError(insertError.message)
-      return
-    }
-    navigate('/my-reports')
   }
 
   return (
