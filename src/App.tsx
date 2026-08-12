@@ -10,10 +10,9 @@ import { PublicDashboardPage } from '@/pages/PublicDashboardPage'
 import { PublicComplaintDetailPage } from '@/pages/PublicComplaintDetailPage'
 import { StaffQueuePage } from '@/pages/staff/StaffQueuePage'
 import { StaffComplaintDetailPage } from '@/pages/staff/StaffComplaintDetailPage'
-
-function ComingSoon({ label }: { label: string }) {
-  return <div className="p-8 text-muted-foreground">{label} — coming soon.</div>
-}
+import { AdminLayout } from '@/pages/admin/AdminLayout'
+import { AdminDepartmentsPage } from '@/pages/admin/AdminDepartmentsPage'
+import { AdminStaffPage } from '@/pages/admin/AdminStaffPage'
 
 function App() {
   return (
@@ -37,7 +36,10 @@ function App() {
         </Route>
 
         <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
-          <Route path="/admin" element={<ComingSoon label="Admin dashboard" />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="departments" element={<AdminDepartmentsPage />} />
+            <Route path="staff" element={<AdminStaffPage />} />
+          </Route>
         </Route>
       </Routes>
     </div>
