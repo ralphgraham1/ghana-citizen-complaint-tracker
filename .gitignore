@@ -1,1 +1,10 @@
 .superpowers/
+
+node_modules
+dist
+.env
+.env.local
+.claude/settings.local.json
+*.tsbuildinfo
+/vite.config.js
+/vite.config.d.ts
