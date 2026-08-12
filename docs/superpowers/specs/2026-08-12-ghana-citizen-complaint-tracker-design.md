@@ -37,6 +37,7 @@ progress, resolution — visible to the public and enforced by role-based owners
 - FR8: System auto-suggests a department on submission based on category (Super Admin/Staff can override)
 - FR9: All role-based data access is enforced server-side via Supabase Row-Level Security, not just hidden in the UI
 - FR10: Input validation on all forms (required fields, file type/size limits on photo upload)
+- FR16: As the citizen types a complaint description, an AI classifier (Claude API, text-only) suggests a category and department, pre-filling those fields; the citizen reviews and can change them before final submission. If the AI call fails or times out, the form falls back to manual category selection and submission is never blocked.
 
 **Should have**
 - FR11: Search/filter on the public dashboard (by category, status, department)
@@ -63,32 +64,40 @@ progress, resolution — visible to the public and enforced by role-based owners
 - NFR5 (Usability): Complaint submission completable in under 2 minutes by a first-time user.
 - NFR6 (Auditability): Every status change is immutably logged (who, when, old→new, note) — this is the accountability mechanism the whole project exists to provide.
 - NFR7 (Maintainability): Role/permission logic centralized in RLS policies and a small number of shared hooks/services, not duplicated across components.
+- NFR8 (Graceful degradation): The AI classification call is non-blocking and has a timeout; its failure never prevents complaint submission.
+- NFR9 (Secrets handling): The Claude API key is never exposed to the browser — it is only read server-side, inside the serverless classification function.
 
 ## 4. Architecture
 
 **Stack:** Vite + React + TypeScript SPA, React Router for client-side routing, TailwindCSS + shadcn/ui (via the `ui-ux-pro-max` design skill) for styling and components, Supabase (Postgres + Auth + Storage + Row-Level Security) as the backend-as-a-service, react-leaflet + OpenStreetMap tiles for maps (no API key required), deployed as a static SPA on Vercel.
 
-No custom backend server is built — Supabase provides auth, database, file storage, and enforces authorization directly at the data layer via RLS. This is what makes a real auth/DB/security-control system achievable solo within 48 hours, while still satisfying the rubric's front-end/back-end/database/auth/authorization/API/validation/security requirements.
+Supabase provides auth, database, file storage, and enforces authorization directly at the data layer via RLS — no custom CRUD backend is built. The one exception is a single Vercel serverless function that proxies the AI classification call, because the Claude API key must never be shipped to the browser. This is what makes a real auth/DB/security-control/API-integration system achievable solo within 48 hours, while still satisfying the rubric's front-end/back-end/database/auth/authorization/API/validation/security requirements.
 
 ```
 Browser (React SPA)
   ├─ Public pages: landing, public dashboard/map, complaint detail (read-only)
-  ├─ Citizen pages: login/register, submit complaint, my reports
+  ├─ Citizen pages: login/register, submit complaint (with AI-suggested category), my reports
   ├─ Staff pages: login, department queue, complaint detail (update)
   └─ Admin pages: login, all complaints, departments, staff management, analytics
         │
-        ▼
-  Supabase client SDK (auth, postgrest queries, storage upload)
-        │
-        ▼
-  Supabase (Postgres + Auth + Storage + RLS policies)
+        ├──────────────────────────────┐
+        ▼                              ▼
+  Supabase client SDK            Vercel serverless function
+  (auth, postgrest queries,      POST /api/classify-complaint
+   storage upload)                     │
+        │                              ▼
+        ▼                        Claude API (Anthropic),
+  Supabase (Postgres + Auth +    key read from server env var
+  Storage + RLS policies)
 ```
+
+**AI classification flow:** citizen types a description → client debounces and calls `POST /api/classify-complaint` with `{ description }` → the serverless function calls the Claude API with a short classification prompt constrained to the fixed category/department enums → returns `{ category, department, confidence }` → the form pre-fills category + department fields, citizen reviews/edits before submitting → the complaint row stores both the AI suggestion and the final citizen-confirmed values (see Data Model) so mis-classifications are auditable.
 
 ## 5. Data Model
 
 - **profiles** (1:1 with `auth.users`) — id, full_name, phone, role (`citizen` / `department_staff` / `super_admin`), department_id (nullable, staff only), created_at
 - **departments** — id, name, description (seeded: Roads & Highways, Sanitation & Waste Management, Water & Drainage, Electricity & Streetlighting)
-- **complaints** — id, citizen_id, category, title, description, photo_url (nullable), latitude, longitude, address_text, status, department_id (nullable until assigned), assigned_staff_id (nullable), created_at, updated_at
+- **complaints** — id, citizen_id, category, title, description, photo_url (nullable), latitude, longitude, address_text, status, department_id (nullable until assigned), assigned_staff_id (nullable), ai_suggested_category (nullable), ai_suggested_department_id (nullable), ai_confidence (nullable), created_at, updated_at
 - **complaint_status_history** — id, complaint_id, old_status, new_status, changed_by, note, created_at
 - **complaint_comments** — id, complaint_id, author_id, comment, created_at
 
@@ -124,6 +133,7 @@ Justification: COCOMO/COCOMO II and Function Point Analysis are calibrated for l
 | Project setup, Supabase schema + RLS policies, seed data | 3 |
 | Auth (register/login, role-aware routing/guards) | 3 |
 | Complaint submission form (incl. map pin + photo upload) | 4 |
+| AI classification (serverless function + Claude API integration + form wiring) | 2.5 |
 | Citizen "My Reports" view | 2 |
 | Public dashboard (map + list + filters) | 4 |
 | Staff queue + status update + notes | 3 |
@@ -132,21 +142,22 @@ Justification: COCOMO/COCOMO II and Function Point Analysis are calibrated for l
 | Testing (unit + manual functional/system/UAT, documented) | 4 |
 | Deployment + seed demo accounts | 1.5 |
 | Documentation (SRS, testing report, tech debt plan, user manual, consolidated doc) | 6 |
-| Buffer / debugging contingency | 3.5 |
-| **Total** | **~43 hours** |
+| Buffer / debugging contingency | 3 |
+| **Total** | **~45.5 hours** |
 
 **Assumptions:** solo developer, working familiarity with React/Supabase, no custom backend server, free-tier hosting is sufficient, no design assets need to be created from scratch (icons/illustrations sourced or generated via design skill).
 
 **Constraints:** 48-hour hard deadline, solo effort, free-tier infrastructure only, must produce both a working deployed app *and* a full documentation set.
 
-**Influence on scope:** the ~43-hour estimate against a 48-hour window leaves limited slack, which is why notifications, native mobile, i18n, and ML features were placed in Won't Have — they would consume the buffer needed for documentation and testing, both of which are graded deliverables in their own right.
+**Influence on scope:** the ~45.5-hour estimate against a 48-hour window leaves very little slack, which is why notifications, native mobile, i18n, and further ML features (beyond the one AI classification call) were placed in Won't Have — they would consume the buffer needed for documentation and testing, both of which are graded deliverables in their own right. The AI feature itself was scoped as narrowly as possible (single text-only classification call, not a chatbot or multimodal pipeline) specifically to fit this budget.
 
 ## 10. Testing Approach
 
 - Unit tests (Vitest) for pure logic: status-transition validity, category→department routing.
 - Manual, documented functional/integration/system tests for the golden path per role (citizen submits → auto-routes → staff updates → citizen sees update → public sees update).
 - Manual UAT walkthrough per role, documented as a checklist with pass/fail.
-- Manual security testing: attempt cross-tenant access (citizen reading another citizen's complaint, staff reading another department's queue) and confirm RLS denies it.
+- Manual security testing: attempt cross-tenant access (citizen reading another citizen's complaint, staff reading another department's queue) and confirm RLS denies it; confirm the Claude API key is absent from all browser network requests and bundle output.
+- Manual test of the AI classification fallback: simulate the classification endpoint failing/timing out and confirm the form still allows manual category selection and submission.
 - Each test documented as: Test case → Expected result → Actual result → Pass/Fail → Defects identified → Corrective action.
 
 ## 11. Technical Debt (anticipated, to be finalized during build)
@@ -160,6 +171,8 @@ Justification: COCOMO/COCOMO II and Function Point Analysis are calibrated for l
 | No image moderation/optimization on uploads | Scope cut for time | Storage cost/abuse risk at scale | Scheduled | Add image resizing + basic moderation before public launch |
 | Minimal accessibility audit | Time constraint | May not fully meet WCAG | Scheduled | Full accessibility pass post-submission |
 | No i18n (English only) | Scope cut for time | Excludes non-English speakers | Acceptable temporarily | Add Twi/other local language support in v2 |
+| AI classification prompt not extensively tuned/evaluated against edge cases | 48h time constraint | Occasional mis-categorization; mitigated by citizen review step before submit | Acceptable temporarily | Build an evaluation set of real complaint text and iterate on the prompt post-submission |
+| No retry/circuit-breaker on the Claude API call; single provider dependency | Scope cut for time | If Anthropic API is unavailable, classification silently falls back to manual entry (by design) but has no retry | Acceptable temporarily | Add retry with backoff and provider fallback in v2 |
 
 ## 12. Deployment Plan
 
