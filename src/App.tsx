@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
@@ -11,8 +11,10 @@ import { PublicComplaintDetailPage } from '@/pages/PublicComplaintDetailPage'
 import { StaffQueuePage } from '@/pages/staff/StaffQueuePage'
 import { StaffComplaintDetailPage } from '@/pages/staff/StaffComplaintDetailPage'
 import { AdminLayout } from '@/pages/admin/AdminLayout'
+import { AdminComplaintsPage } from '@/pages/admin/AdminComplaintsPage'
 import { AdminDepartmentsPage } from '@/pages/admin/AdminDepartmentsPage'
 import { AdminStaffPage } from '@/pages/admin/AdminStaffPage'
+import { AdminAnalyticsPage } from '@/pages/admin/AdminAnalyticsPage'
 
 function App() {
   return (
@@ -37,8 +39,11 @@ function App() {
 
         <Route element={<ProtectedRoute allowedRoles={['super_admin']} />}>
           <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="complaints" replace />} />
+            <Route path="complaints" element={<AdminComplaintsPage />} />
             <Route path="departments" element={<AdminDepartmentsPage />} />
             <Route path="staff" element={<AdminStaffPage />} />
+            <Route path="analytics" element={<AdminAnalyticsPage />} />
           </Route>
         </Route>
       </Routes>
