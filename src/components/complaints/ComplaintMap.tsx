@@ -38,8 +38,8 @@ function markerIcon(color: string, borderColor: string) {
   return L.divIcon({
     className: '',
     html: `<div style="position:relative;width:14px;height:14px;">
-      <div style="position:absolute;inset:0;border-radius:50%;background:${color};opacity:0.35;animation:complaint-marker-pulse 2s ease-out infinite;"></div>
-      <div style="position:absolute;inset:0;border-radius:50%;background:${color};border:2px solid ${borderColor};box-shadow:0 0 8px ${color}88;animation:complaint-marker-in 0.3s ease-out;"></div>
+      <div class="complaint-marker-halo" style="position:absolute;inset:0;border-radius:50%;background:${color};opacity:0.35;"></div>
+      <div class="complaint-marker-dot" style="position:absolute;inset:0;border-radius:50%;background:${color};border:2px solid ${borderColor};box-shadow:0 0 8px ${color}88;"></div>
     </div>`,
     iconSize: [14, 14],
   })
