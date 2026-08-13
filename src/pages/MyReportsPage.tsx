@@ -4,14 +4,15 @@ import { ComplaintCard } from '@/components/complaints/ComplaintCard'
 
 export function MyReportsPage() {
   const { user } = useAuth()
-  const { complaints, loading } = useMyComplaints(user?.id)
+  const { complaints, loading, error } = useMyComplaints(user?.id)
 
   if (loading) return <p className="p-6 text-muted-foreground">Loading…</p>
 
   return (
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="mb-4 text-xl font-semibold">My Reports</h1>
-      {complaints.length === 0 && <p className="text-muted-foreground">You haven't reported anything yet.</p>}
+      {error && <p className="mb-4 text-sm text-red-600">Couldn't load your reports: {error}</p>}
+      {!error && complaints.length === 0 && <p className="text-muted-foreground">You haven't reported anything yet.</p>}
       <div className="space-y-3">
         {complaints.map((c) => (
           <ComplaintCard key={c.id} complaint={c} to={`/my-reports/${c.id}`} />
