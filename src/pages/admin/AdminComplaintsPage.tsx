@@ -38,7 +38,7 @@ export function AdminComplaintsPage() {
 
   return (
     <div className="space-y-4">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <Table>
         <TableHeader>
           <TableRow>

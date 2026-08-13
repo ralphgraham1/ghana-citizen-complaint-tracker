@@ -13,7 +13,7 @@ export function MyReportsPage() {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="mb-4 text-xl font-semibold">My Reports</h1>
-      {error && <p className="mb-4 text-sm text-red-600">Couldn't load your reports: {error}</p>}
+      {error && <p className="mb-4 text-sm text-destructive">Couldn't load your reports: {error}</p>}
       {!error && complaints.length === 0 && <p className="text-muted-foreground">You haven't reported anything yet.</p>}
       <motion.div className="space-y-3" variants={listContainerVariants} initial="hidden" animate="visible">
         {complaints.map((c) => (

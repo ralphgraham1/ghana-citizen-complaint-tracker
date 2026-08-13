@@ -69,7 +69,7 @@ export function PublicComplaintDetailPage() {
       <div>
         <h2 className="mb-2 font-medium">Timeline</h2>
         {historyError ? (
-          <p className="text-sm text-red-600">Couldn't load the status timeline: {historyError}</p>
+          <p className="text-sm text-destructive">Couldn't load the status timeline: {historyError}</p>
         ) : (
           <ol className="space-y-2">
             {history.map((h, i) => (

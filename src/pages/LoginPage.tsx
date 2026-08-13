@@ -43,7 +43,7 @@ export function LoginPage() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? 'Logging in…' : 'Log in'}
             </Button>

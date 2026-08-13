@@ -36,7 +36,7 @@ export function PublicDashboardPage() {
     <div className="p-6">
       <h1 className="mb-1 text-xl font-semibold">Public accountability dashboard</h1>
       <p className="mb-4 text-sm text-muted-foreground">Every reported issue and its current status — no login required.</p>
-      {error && <p className="mb-4 text-sm text-red-600">Couldn't load reports: {error}</p>}
+      {error && <p className="mb-4 text-sm text-destructive">Couldn't load reports: {error}</p>}
 
       <div className="mb-4 flex flex-wrap gap-3">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as ComplaintStatus | 'all')}>

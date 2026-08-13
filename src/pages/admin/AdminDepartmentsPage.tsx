@@ -57,7 +57,7 @@ export function AdminDepartmentsPage() {
         <h2 className="font-medium">Add department</h2>
         <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
         <Input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" disabled={saving}>
           {saving ? 'Adding…' : 'Add'}
         </Button>

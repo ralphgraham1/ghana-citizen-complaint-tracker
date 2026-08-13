@@ -57,7 +57,7 @@ export function AdminStaffPage() {
         Staff accounts are created via the seed script (or Supabase Studio) — see the User Manual. This page lets you reassign an existing
         staff member to a different department.
       </p>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <Table>
         <TableHeader>
           <TableRow>

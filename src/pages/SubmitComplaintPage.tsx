@@ -164,7 +164,7 @@ export function SubmitComplaintPage() {
           <Input id="photo" type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)} />
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" disabled={submitting} className="w-full">
           {submitting ? 'Submitting…' : 'Submit report'}

@@ -13,7 +13,7 @@ export function StaffQueuePage() {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <h1 className="mb-4 text-xl font-semibold">Department queue</h1>
-      {error && <p className="mb-4 text-sm text-red-600">Couldn't load the queue: {error}</p>}
+      {error && <p className="mb-4 text-sm text-destructive">Couldn't load the queue: {error}</p>}
       {!profile?.department_id && !error && (
         <p className="mb-4 text-sm text-amber-600">Your account isn't assigned to a department yet — contact an administrator.</p>
       )}
