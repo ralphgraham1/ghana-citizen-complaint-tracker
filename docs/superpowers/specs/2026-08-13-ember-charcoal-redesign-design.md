@@ -59,20 +59,32 @@ These map onto the exact CSS custom properties Task 1's shadcn setup already est
 - **Marker:** the existing `ComplaintMap.tsx` marker is already a colored `divIcon` circle (not a Leaflet default pin) — it needs restyling, not replacing. Add a soft halo (`box-shadow` with a status-colored glow) and swap the current white border for a border matching the surrounding basemap (charcoal in dark mode, white in light mode), producing the "glow dot" style approved in brainstorming. Status-to-color mapping uses the same six status colors as the badges above (the saturated/text variant, not the tinted background variant).
 - The picked-location marker (used on the submission form's map picker) gets the same glow-dot treatment in the accent ember color, distinct from any status color.
 
-## 6. Non-Goals / Explicitly Rejected
+## 6. Motion (Framer Motion)
+
+Restrained, not showy — three specific places, nothing app-wide:
+
+- **Micro-interactions:** buttons and cards get subtle hover/tap feedback (slight scale on hover ~1.02, tap ~0.97) via `motion.button`/`motion.div` wrapping the existing shadcn components. Complaint card lists (public dashboard, my reports, staff queue, admin complaints) fade + stagger in on first render (`staggerChildren` on the parent, simple opacity/y-offset variant per card) instead of popping in all at once.
+- **Status change animation:** `StatusBadge` gets a crossfade/scale-pulse when its `status` prop changes (e.g. after a staff member updates a complaint) — implemented with `AnimatePresence`/`motion.span` keyed on the status value, so the badge visibly acknowledges the change rather than silently swapping color.
+- **Map marker animation:** genuine Framer Motion can't attach to Leaflet markers directly — `divIcon` content is a static HTML string handed to Leaflet's own rendering, not a mounted React component, so it falls outside React's tree entirely. The equivalent visual effect (an entrance scale-in as markers appear, a soft pulsing glow) is achieved with CSS `@keyframes` embedded in the marker's HTML string instead — same restrained feel, different mechanism, since this is a hard constraint of how react-leaflet exposes custom icons rather than a design choice.
+
+**Explicitly not doing:** page-transition animations between routes (declined), and no motion anywhere beyond these three areas — no animated backgrounds, no scroll-triggered reveals, no loading-skeleton shimmer beyond what already exists.
+
+## 7. Non-Goals / Explicitly Rejected
 
 - No manual light/dark toggle UI.
 - No gradient backgrounds, buttons, or badges anywhere.
 - No change to map center/zoom defaults, filter logic, or any non-visual behavior.
 - No typography/font changes in this pass.
+- No page-transition animations (see Motion section).
 
-## 7. Implementation Notes (for the plan)
+## 8. Implementation Notes (for the plan)
 
 Primary files expected to change:
 - `tailwind.config.ts` — `darkMode: 'media'` (from `['class']`).
 - `src/index.css` — replace `:root`/`.dark` HSL values with the new token table above, restructured around `@media (prefers-color-scheme: dark)`.
 - `src/components/complaints/ComplaintMap.tsx` — tile URL selection by color-scheme media query, glow-dot marker styling.
-- `src/components/complaints/StatusBadge.tsx` — status color pairs updated to the new table (currently hardcoded Tailwind utility classes like `bg-yellow-100 text-yellow-800`; these become custom hex-based classes or inline styles reading the new tokens, since the new status hues don't map cleanly onto default Tailwind color steps).
+- `src/components/complaints/StatusBadge.tsx` — status color pairs updated to the new table (currently hardcoded Tailwind utility classes like `bg-yellow-100 text-yellow-800`; these become custom hex-based classes or inline styles reading the new tokens, since the new status hues don't map cleanly onto default Tailwind color steps), plus the `AnimatePresence`/`motion.span` crossfade on status change.
+- `src/components/ui/button.tsx`, `src/components/complaints/ComplaintCard.tsx` — wrapped with `motion.button`/`motion.div` for hover/tap micro-interactions; card-list pages (public dashboard, my reports, staff queue, admin complaints) get a `staggerChildren` fade-in on the list container.
 - Spot-check every page for any hardcoded color classes that bypass the token layer (e.g. literal `bg-white`, `text-gray-900`) rather than the semantic `background`/`foreground`/`card` tokens — these would not automatically pick up the new palette and need updating individually.
 
-No new dependencies required — CartoDB tiles are used the same way the current OSM tile URL is (a plain `TileLayer` `url` prop in react-leaflet).
+**New dependency:** `framer-motion`. CartoDB tiles need no new dependency — used the same way the current OSM tile URL is (a plain `TileLayer` `url` prop in react-leaflet).
