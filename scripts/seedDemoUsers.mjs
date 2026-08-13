@@ -38,12 +38,20 @@ async function main() {
       ? departments.find((d) => d.name === demoUser.departmentName)?.id ?? null
       : null
 
-    const { error: profileError } = await admin.from('profiles').insert({
-      id: created.user.id,
-      full_name: demoUser.full_name,
-      role: demoUser.role,
-      department_id: departmentId,
-    })
+    // Upsert, not insert: the handle_new_user trigger (added in
+    // 0003_final_review_fixes.sql) already creates a default citizen-role
+    // profile row as soon as createUser() above inserts into auth.users, so
+    // a plain insert here would conflict on the primary key. Upsert
+    // overwrites that placeholder with the correct demo role/department.
+    const { error: profileError } = await admin.from('profiles').upsert(
+      {
+        id: created.user.id,
+        full_name: demoUser.full_name,
+        role: demoUser.role,
+        department_id: departmentId,
+      },
+      { onConflict: 'id' }
+    )
 
     if (profileError) {
       console.error(`Failed to create profile for ${demoUser.email}:`, profileError.message)

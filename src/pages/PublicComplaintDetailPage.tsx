@@ -20,7 +20,7 @@ export function PublicComplaintDetailPage() {
     if (!id) return
     Promise.all([
       supabase.from('complaints_public').select('*').eq('id', id).single(),
-      supabase.from('complaint_status_history').select('new_status, created_at').eq('complaint_id', id).order('created_at'),
+      supabase.from('complaint_status_history_public').select('new_status, created_at').eq('complaint_id', id).order('created_at'),
     ])
       .then(([complaintRes, historyRes]) => {
         setComplaint((complaintRes.data as PublicComplaint) ?? null)
