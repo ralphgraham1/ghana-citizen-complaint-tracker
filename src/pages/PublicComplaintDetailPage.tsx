@@ -14,6 +14,7 @@ export function PublicComplaintDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [complaint, setComplaint] = useState<PublicComplaint | null>(null)
   const [history, setHistory] = useState<PublicHistoryEntry[]>([])
+  const [historyError, setHistoryError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -23,8 +24,28 @@ export function PublicComplaintDetailPage() {
       supabase.from('complaint_status_history_public').select('new_status, created_at').eq('complaint_id', id).order('created_at'),
     ])
       .then(([complaintRes, historyRes]) => {
+        // supabase-js resolves with { data, error } rather than rejecting on
+        // a query-level failure (RLS denial, bad grant, etc.), so the
+        // .catch() below only ever fires on a genuine network/thrown error.
+        // Checking .error explicitly here is what actually distinguishes
+        // "the query failed" from "the query succeeded with zero rows" --
+        // exactly the distinction whose absence hid the original Fix 1 bug.
+        if (complaintRes.error) {
+          console.error('Failed to load public complaint:', complaintRes.error.message)
+          setComplaint(null)
+          setLoading(false)
+          return
+        }
         setComplaint((complaintRes.data as PublicComplaint) ?? null)
-        setHistory((historyRes.data as PublicHistoryEntry[]) ?? [])
+
+        if (historyRes.error) {
+          console.error('Failed to load complaint status history:', historyRes.error.message)
+          setHistoryError(historyRes.error.message)
+          setHistory([])
+        } else {
+          setHistoryError(null)
+          setHistory((historyRes.data as PublicHistoryEntry[]) ?? [])
+        }
         setLoading(false)
       })
       .catch(() => {
@@ -47,13 +68,17 @@ export function PublicComplaintDetailPage() {
       <ComplaintMap complaints={[complaint]} />
       <div>
         <h2 className="mb-2 font-medium">Timeline</h2>
-        <ol className="space-y-2">
-          {history.map((h, i) => (
-            <li key={i} className="border-l-2 border-muted pl-3 text-sm">
-              <StatusBadge status={h.new_status} /> <span className="text-muted-foreground">{new Date(h.created_at).toLocaleString()}</span>
-            </li>
-          ))}
-        </ol>
+        {historyError ? (
+          <p className="text-sm text-red-600">Couldn't load the status timeline: {historyError}</p>
+        ) : (
+          <ol className="space-y-2">
+            {history.map((h, i) => (
+              <li key={i} className="border-l-2 border-muted pl-3 text-sm">
+                <StatusBadge status={h.new_status} /> <span className="text-muted-foreground">{new Date(h.created_at).toLocaleString()}</span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
     </div>
   )

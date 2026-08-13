@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useDepartments } from '@/hooks/useDepartments'
@@ -22,7 +22,14 @@ export function SubmitComplaintPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<ComplaintCategory>('other')
-  const [categoryTouched, setCategoryTouched] = useState(false)
+  // A ref, not state: the AI-classification resolver below reads this after
+  // an async round trip, and a ref's .current is always read fresh at access
+  // time rather than captured in the closure at the moment the effect ran.
+  // If this were state instead, a category pick made *while* a
+  // classification request is in flight would be invisible to that request's
+  // already-created closure, and the AI response would silently overwrite
+  // the user's manual choice anyway.
+  const categoryTouchedRef = useRef(false)
   const [aiSuggestion, setAiSuggestion] = useState<{ category: ComplaintCategory; confidence: number } | null>(null)
   const [addressText, setAddressText] = useState('')
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -38,7 +45,7 @@ export function SubmitComplaintPage() {
     classifyDescription(debouncedDescription).then((result) => {
       if (cancelled || !result) return
       setAiSuggestion(result)
-      if (!categoryTouched) setCategory(result.category)
+      if (!categoryTouchedRef.current) setCategory(result.category)
     })
     return () => {
       cancelled = true
@@ -126,7 +133,7 @@ export function SubmitComplaintPage() {
             value={category}
             onValueChange={(v) => {
               setCategory(v as ComplaintCategory)
-              setCategoryTouched(true)
+              categoryTouchedRef.current = true
             }}
           >
             <SelectTrigger id="category">
