@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import type { Complaint, PublicComplaint } from '@/lib/types'
 
@@ -50,21 +50,42 @@ function ClickCatcher({ onPick }: { onPick: (lat: number, lng: number) => void }
   return null
 }
 
+function ViewUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap()
+
+  useEffect(() => {
+    map.flyTo(center, zoom, { duration: 1 })
+  }, [center, zoom, map])
+
+  return null
+}
+
 interface ComplaintMapProps {
   complaints?: (Complaint | PublicComplaint)[]
   pickable?: boolean
   pickedLocation?: { lat: number; lng: number } | null
   onPick?: (lat: number, lng: number) => void
   onMarkerClick?: (complaintId: string) => void
+  center?: [number, number]
+  zoom?: number
 }
 
-export function ComplaintMap({ complaints = [], pickable = false, pickedLocation, onPick, onMarkerClick }: ComplaintMapProps) {
+export function ComplaintMap({
+  complaints = [],
+  pickable = false,
+  pickedLocation,
+  onPick,
+  onMarkerClick,
+  center,
+  zoom,
+}: ComplaintMapProps) {
   const isDark = useIsDarkScheme()
   const borderColor = isDark ? '#151312' : '#ffffff'
 
   return (
-    <MapContainer center={ACCRA_CENTER} zoom={7} style={{ height: '400px', width: '100%' }}>
+    <MapContainer center={center ?? ACCRA_CENTER} zoom={zoom ?? 7} style={{ height: '400px', width: '100%' }}>
       <TileLayer attribution={TILE_ATTRIBUTION} url={isDark ? DARK_TILE_URL : LIGHT_TILE_URL} />
+      {center && zoom && <ViewUpdater center={center} zoom={zoom} />}
       {pickable && onPick && <ClickCatcher onPick={onPick} />}
       {pickedLocation && <Marker position={[pickedLocation.lat, pickedLocation.lng]} icon={markerIcon(PICK_COLOR, borderColor)} />}
       {complaints.map((c) => (

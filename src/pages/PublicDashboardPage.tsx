@@ -4,6 +4,7 @@ import { usePublicComplaints } from '@/hooks/useComplaints'
 import { useDepartments } from '@/hooks/useDepartments'
 import { ComplaintMap } from '@/components/complaints/ComplaintMap'
 import { ComplaintCard } from '@/components/complaints/ComplaintCard'
+import { Button } from '@/components/ui/button'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { CATEGORY_LABELS } from '@/lib/categoryRouting'
 import { listContainerVariants } from '@/lib/motionVariants'
@@ -12,12 +13,37 @@ import type { ComplaintCategory, ComplaintStatus } from '@/lib/types'
 const STATUS_OPTIONS: (ComplaintStatus | 'all')[] = ['all', 'submitted', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected']
 const CATEGORY_OPTIONS: (ComplaintCategory | 'all')[] = ['all', ...(Object.keys(CATEGORY_LABELS) as ComplaintCategory[])]
 
+const LOCAL_ZOOM = 13
+
 export function PublicDashboardPage() {
   const { complaints, loading, error } = usePublicComplaints()
   const { departments } = useDepartments()
   const [statusFilter, setStatusFilter] = useState<ComplaintStatus | 'all'>('all')
   const [departmentFilter, setDepartmentFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<ComplaintCategory | 'all'>('all')
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null)
+  const [locating, setLocating] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
+
+  function handleUseMyLocation() {
+    if (!navigator.geolocation) {
+      setLocationError("Your browser doesn't support location.")
+      return
+    }
+    setLocating(true)
+    setLocationError(null)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation([position.coords.latitude, position.coords.longitude])
+        setLocating(false)
+      },
+      () => {
+        setLocationError("Couldn't get your location.")
+        setLocating(false)
+      },
+      { timeout: 10000 }
+    )
+  }
 
   const filtered = useMemo(
     () =>
@@ -78,9 +104,14 @@ export function PublicDashboardPage() {
             ))}
           </SelectContent>
         </Select>
+
+        <Button type="button" size="sm" variant="outline" onClick={handleUseMyLocation} disabled={locating}>
+          {locating ? 'Locating…' : 'Use my location'}
+        </Button>
+        {locationError && <p className="self-center text-xs text-destructive">{locationError}</p>}
       </div>
 
-      <ComplaintMap complaints={filtered} />
+      <ComplaintMap complaints={filtered} center={userLocation ?? undefined} zoom={userLocation ? LOCAL_ZOOM : undefined} />
 
       <motion.div
         className="mt-6 grid gap-3 sm:grid-cols-2"
