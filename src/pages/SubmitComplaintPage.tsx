@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useDepartments } from '@/hooks/useDepartments'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { classifyDescription } from '@/lib/aiClassification'
-import { suggestDepartmentId } from '@/lib/categoryRouting'
+import { CATEGORY_LABELS, suggestDepartmentId } from '@/lib/categoryRouting'
 import { supabase } from '@/lib/supabaseClient'
 import type { ComplaintCategory } from '@/lib/types'
 import { ComplaintMap } from '@/components/complaints/ComplaintMap'
@@ -14,15 +14,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 
-const CATEGORY_LABELS: Record<ComplaintCategory, string> = {
-  pothole: 'Pothole',
-  streetlight: 'Broken streetlight',
-  waste_bin: 'Overflowing waste bin',
-  drainage: 'Drainage problem',
-  infrastructure: 'Damaged public infrastructure',
-  other: 'Other',
-}
-
 export function SubmitComplaintPage() {
   const { user } = useAuth()
   const { departments } = useDepartments()
@@ -31,6 +22,7 @@ export function SubmitComplaintPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<ComplaintCategory>('other')
+  const [categoryTouched, setCategoryTouched] = useState(false)
   const [aiSuggestion, setAiSuggestion] = useState<{ category: ComplaintCategory; confidence: number } | null>(null)
   const [addressText, setAddressText] = useState('')
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -46,7 +38,7 @@ export function SubmitComplaintPage() {
     classifyDescription(debouncedDescription).then((result) => {
       if (cancelled || !result) return
       setAiSuggestion(result)
-      setCategory(result.category)
+      if (!categoryTouched) setCategory(result.category)
     })
     return () => {
       cancelled = true
@@ -130,7 +122,13 @@ export function SubmitComplaintPage() {
 
         <div>
           <Label htmlFor="category">Category</Label>
-          <Select value={category} onValueChange={(v) => setCategory(v as ComplaintCategory)}>
+          <Select
+            value={category}
+            onValueChange={(v) => {
+              setCategory(v as ComplaintCategory)
+              setCategoryTouched(true)
+            }}
+          >
             <SelectTrigger id="category">
               <SelectValue />
             </SelectTrigger>

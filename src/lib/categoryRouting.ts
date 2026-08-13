@@ -1,5 +1,14 @@
 import type { ComplaintCategory, Department } from '@/lib/types'
 
+export const CATEGORY_LABELS: Record<ComplaintCategory, string> = {
+  pothole: 'Pothole',
+  streetlight: 'Broken streetlight',
+  waste_bin: 'Overflowing waste bin',
+  drainage: 'Drainage problem',
+  infrastructure: 'Damaged public infrastructure',
+  other: 'Other',
+}
+
 export const CATEGORY_TO_DEPARTMENT_NAME: Record<ComplaintCategory, string | null> = {
   pothole: 'Roads & Highways',
   infrastructure: 'Roads & Highways',
