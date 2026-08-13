@@ -1,0 +1,20 @@
+Ghana Citizen Service & Complaint Tracker
+
+Live Application URL: https://ghana-citizen-complaint-tracker.vercel.app
+Admin URL: https://ghana-citizen-complaint-tracker.vercel.app/admin
+
+Source Code Repository: https://github.com/ralphgraham1/ghana-citizen-complaint-tracker
+
+Test Credentials
+-----------------
+Citizen:
+  Email: citizen.demo@example.com
+  Password: DemoCitizen123!
+
+Department Staff (Roads & Highways):
+  Email: staff.demo@example.com
+  Password: DemoStaff123!
+
+Super Admin:
+  Email: admin.demo@example.com
+  Password: DemoAdmin123!
