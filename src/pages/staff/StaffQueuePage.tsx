@@ -1,6 +1,8 @@
+import { motion } from 'framer-motion'
 import { useAuth } from '@/hooks/useAuth'
 import { useDepartmentComplaints } from '@/hooks/useComplaints'
 import { ComplaintCard } from '@/components/complaints/ComplaintCard'
+import { listContainerVariants } from '@/lib/motionVariants'
 
 export function StaffQueuePage() {
   const { profile } = useAuth()
@@ -16,11 +18,11 @@ export function StaffQueuePage() {
         <p className="mb-4 text-sm text-amber-600">Your account isn't assigned to a department yet — contact an administrator.</p>
       )}
       {!error && complaints.length === 0 && <p className="text-muted-foreground">No complaints assigned to your department yet.</p>}
-      <div className="space-y-3">
+      <motion.div className="space-y-3" variants={listContainerVariants} initial="hidden" animate="visible">
         {complaints.map((c) => (
           <ComplaintCard key={c.id} complaint={c} to={`/staff/${c.id}`} />
         ))}
-      </div>
+      </motion.div>
     </div>
   )
 }

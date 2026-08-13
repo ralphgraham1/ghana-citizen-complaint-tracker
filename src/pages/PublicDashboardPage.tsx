@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import { usePublicComplaints } from '@/hooks/useComplaints'
 import { useDepartments } from '@/hooks/useDepartments'
 import { ComplaintMap } from '@/components/complaints/ComplaintMap'
 import { ComplaintCard } from '@/components/complaints/ComplaintCard'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { CATEGORY_LABELS } from '@/lib/categoryRouting'
+import { listContainerVariants } from '@/lib/motionVariants'
 import type { ComplaintCategory, ComplaintStatus } from '@/lib/types'
 
 const STATUS_OPTIONS: (ComplaintStatus | 'all')[] = ['all', 'submitted', 'assigned', 'in_progress', 'resolved', 'closed', 'rejected']
@@ -80,11 +82,16 @@ export function PublicDashboardPage() {
 
       <ComplaintMap complaints={filtered} />
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <motion.div
+        className="mt-6 grid gap-3 sm:grid-cols-2"
+        variants={listContainerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {filtered.map((c) => (
           <ComplaintCard key={c.id} complaint={c} to={`/complaints/${c.id}`} />
         ))}
-      </div>
+      </motion.div>
     </div>
   )
 }
